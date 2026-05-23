@@ -45,25 +45,28 @@ All results are on the held-out 20% validation split. "Plain acc" is overall acc
 | 2 | ResNet18 | Unfroze `layer3`+`layer4` with discriminative LRs (1e-5 / 5e-5 / 1e-4); dropout 0.5; weight_decay 1e-4; stronger aug (TrivialAugmentWide, RandomErasing); ReduceLROnPlateau; best-state snapshotting | **0.674** | n/a | Train/val gap closed (68% / 67%). Best at epoch 15, val_loss 1.5062. |
 | 3 | EfficientNet-B0 | Same recipe as trial 2; unfroze `features[6]`+`features[7]`; new head (Dropout 0.4 → 512 → Dropout 0.5 → 21) | ~0.667 | n/a | ~32 epochs (continued past the 20-epoch cap). Val_loss 1.4671 — best loss seen, but accuracy did not beat ResNet18. |
 | 4 | EfficientNet-B0 | + WeightedRandomSampler with weight = 1/n (aggressive class rebalancing) | 0.610 | 0.567 | Plain acc drops, but minority classes finally visible (omni-directional-antenna F1 0.89, pulse-generator 0.73). Majority recall crashed (potentiometers 0.39, relays 0.43). |
-| 5 | EfficientNet-B0 | + WeightedRandomSampler with weight = 1/sqrt(n) (softer rebalancing) | 0.634 | **0.589** | Best balance overall. Majority recall recovered (potentiometers 0.53, relays 0.49); minority gains preserved (cartridge-fuse F1 0.85, shunt 0.69, filament 0.82). |
+| 5 | EfficientNet-B0 | + WeightedRandomSampler with weight = 1/sqrt(n) (softer rebalancing) | 0.634 | 0.589 | Majority recall recovered (potentiometers 0.53, relays 0.49); minority gains preserved (cartridge-fuse F1 0.85, shunt 0.69, filament 0.82). |
+| 6 | ResNet50 | Same recipe as trial 5 (1/sqrt(n) sampler); unfroze `layer3`+`layer4` with discriminative LRs | **0.686** | **0.626** | New best. Train/val gap widened to ~8 points (mild overfitting). Early-stopped at epoch 10. |
 
-### Trial 5 per-class breakdown (best run)
+### Trial 6 per-class breakdown (best run)
 
-Strong (F1 > 0.70): `interconnects` (0.84), `cartridge-fuse` (0.85), `filament` (0.82), `integrated-circuits` (0.73), `pulse-generator` (0.73), `omni-directional-antenna` (0.82).
+Strong (F1 > 0.70): `filament` (0.87), `interconnects` (0.87), `cartridge-fuse` (0.84), `omni-directional-antenna` (0.85), `pulse-generator` (0.81), `integrated-circuits` (0.76), `transformers` (0.73), `LED` (0.70).
 
-Mid (F1 0.50–0.70): `LED`, `attenuator`, `limiter-clipper`, `potentiometers`, `relays`, `transistors`, `transformers`, `shunt`, `heat-sink`.
+Mid (F1 0.50–0.70): `limiter-clipper` (0.70), `shunt` (0.69), `relays` (0.68), `attenuator` (0.67), `potentiometers` (0.67), `heat-sink` (0.65), `transistors` (0.60), `capacitors` (0.60), `induction-coil` (0.52).
 
-Weak (F1 < 0.50): `capacitors` (0.47), `induction-coil` (0.45), `semiconductor-diode` (0.42).
+Weak (F1 < 0.50): `semiconductor-diode` (0.42), `armature` (0.42 — only 5 val samples, very noisy).
 
 **Effectively broken** (data problem, not tuning problem):
 - `light-circuit` — F1 0.00 (only 57 train samples, high visual variance).
-- `local-oscillator` — F1 0.12 (112 train samples, visually overlaps with other PCB-style classes).
+- `local-oscillator` — F1 0.10 (112 train samples, visually overlaps with other PCB-style classes).
+
+The biggest gains from trial 5 → trial 6 were on the mid-tier classes that had been stuck around F1 0.45–0.60: `capacitors` 0.47 → 0.60, `relays` 0.57 → 0.68, `attenuator` 0.54 → 0.67, `pulse-generator` 0.73 → 0.81. The two broken classes did not move.
 
 ## Findings
 
 1. **The I/O bottleneck was Google Drive, not the GPU.** Copying the dataset to local Colab disk and bumping `num_workers` from 0 to 2 with `persistent_workers=True` cut epoch time from minutes to seconds.
 2. **Regularization closed the train/val gap** — trial 1 had a 17-point train/val gap; trial 2's recipe (heavier aug + dropout 0.5 + weight_decay + discriminative LR + ReduceLROnPlateau) brought it to under 1 point.
-3. **Bigger backbone did not help.** EfficientNet-B0 (trial 3) matched but did not beat ResNet18 (trial 2). With ~10K images across 21 classes, the dataset — not model capacity — was the bottleneck.
+3. **Bigger backbone helped, but only with enough extra depth.** EfficientNet-B0 (trial 3, ~5M params) matched but did not beat ResNet18 (trial 2, ~12M). ResNet50 (trial 6, ~25M) clearly did — accuracy +5 points and macro-F1 +4 points over the best EfficientNet-B0 run. The earlier "data is the bottleneck" read was partly wrong: model capacity still mattered, just not in small increments.
 4. **Plain accuracy is misleading on imbalanced data.** Pre-rebalancing accuracy of 67% mostly reflected good performance on the top 5 classes. Macro-F1 on minority classes was near zero. Rebalancing trades a few points of plain accuracy for substantially better minority-class performance.
 5. **`1/sqrt(n)` sample weights beat `1/n`.** Fully balanced sampling starved the majority classes; the square-root softening kept minority gains while letting the model still see common classes frequently.
 6. **Two classes are unfixable without more data / label review** — `light-circuit` and `local-oscillator`. The headline number would jump if these were merged with a related class or dropped.
