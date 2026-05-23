@@ -81,3 +81,32 @@ We achieved the best results by using an ensemble model combining the reults fro
 
 - Investigate `light-circuit` and `local-oscillator`: review labels, consider merging into a `miscellaneous-circuit` class or dropping.
 - Collect more samples for the bottom 6 classes (each <150 images).
+
+#VISUALIZATIONS 
+##Trials comparisons 
+<img width="1051" height="518" alt="image" src="https://github.com/user-attachments/assets/be721da9-09ce-4ac7-acb2-72b63b35f157" />
+
+##Ensemble Model Confusion Matrix 
+<img width="982" height="856" alt="image" src="https://github.com/user-attachments/assets/e65cb21d-c576-4f5c-9cfd-3f397061fc0e" />
+
+##Example Predictions 
+<img width="1045" height="937" alt="image" src="https://github.com/user-attachments/assets/0bfe7a01-635c-44ac-93e5-d0cd9d7bd2bc" />
+<img width="723" height="431" alt="image" src="https://github.com/user-attachments/assets/89cee0b0-7f1d-4c8b-b856-fd35c62c9532" />
+<img width="728" height="444" alt="image" src="https://github.com/user-attachments/assets/ef446e34-3e7d-41ca-b370-4723c4ffa5bd" />
+<img width="724" height="431" alt="image" src="https://github.com/user-attachments/assets/50e9afd5-c002-4742-92de-dae9423c733f" />
+<img width="721" height="438" alt="image" src="https://github.com/user-attachments/assets/dd622969-4772-407e-b4ef-af97c22f7f4b" />
+<img width="712" height="434" alt="image" src="https://github.com/user-attachments/assets/fc803c40-a67b-4d59-8a31-5757bddcd2b1" />
+
+##Model accuracy during training vs Validation 
+<img width="991" height="602" alt="image" src="https://github.com/user-attachments/assets/555058b6-6461-4bf1-9b8f-2e19353a0e95" />
+
+
+
+
+
+
+
+
+
+
+
